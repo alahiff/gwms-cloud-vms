@@ -8,7 +8,7 @@
 %endif
 
 Name:               glideinwms-vm
-Version:            1.0.4
+Version:            1.0.5
 Release:            1%{?dist}
 
 Summary:            The glideinWMS service that contextualizes a VM
@@ -74,6 +74,18 @@ Group:              System Environment/Daemons
 glideinWMS pilot launcher service
 
 Configures the glideinmws-vm-core package to use the opennebula style of
+user data retrieval.
+
+
+%package cernvm
+Summary:            The glideinWMS service that contextualizes a VM
+Requires:           glideinwms-vm-core >= %{version}-%{release}
+Group:              System Environment/Daemons
+
+%description cernvm
+glideinWMS pilot launcher service
+
+Configures the glideinmws-vm-core package to use the cernvm style of
 user data retrieval.
 
 
@@ -160,6 +172,7 @@ install -m 0755 pilot-launcher $RPM_BUILD_ROOT%{_sbindir}/pilot-launcher
 install -d  $RPM_BUILD_ROOT%{_sysconfdir}/glideinwms
 install -m 0755 glidein-pilot-nimbus.ini $RPM_BUILD_ROOT%{_sysconfdir}/glideinwms/glidein-pilot-nimbus.ini
 install -m 0755 glidein-pilot-ec2.ini $RPM_BUILD_ROOT%{_sysconfdir}/glideinwms/glidein-pilot-ec2.ini
+install -m 0755 glidein-pilot-cernvm.ini $RPM_BUILD_ROOT%{_sysconfdir}/glideinwms/glidein-pilot-cernvm.ini
 install -m 0755 glidein-pilot-one.ini $RPM_BUILD_ROOT%{_sysconfdir}/glideinwms/glidein-pilot-one.ini
 install -m 0755 glidein-pilot-test.ini $RPM_BUILD_ROOT%{_sysconfdir}/glideinwms/glidein-pilot-test.ini
 
@@ -198,6 +211,11 @@ ln -s %{_sysconfdir}/glideinwms/glidein-pilot-ec2.ini %{_sysconfdir}/glideinwms/
 
 # create a symbolic link to the file using a common name
 ln -s %{_sysconfdir}/glideinwms/glidein-pilot-one.ini %{_sysconfdir}/glideinwms/glidein-pilot.ini
+
+%post cernvm
+
+# create a symbolic link to the file using a common name
+ln -s %{_sysconfdir}/glideinwms/glidein-pilot-cernvm.ini %{_sysconfdir}/glideinwms/glidein-pilot.ini
 
 %post nimbus
 
@@ -242,6 +260,15 @@ fi
 if [ "$1" = "0" ] ; then
     unlink %{_sysconfdir}/glideinwms/glidein-pilot.ini
     rm -rf %{_sysconfdir}/glideinwms/glidein-pilot-one.ini
+fi
+
+%preun cernvm
+# $1 = 0 - Action is uninstall
+# $1 = 1 - Action is upgrade
+
+if [ "$1" = "0" ] ; then
+    unlink %{_sysconfdir}/glideinwms/glidein-pilot.ini
+    rm -rf %{_sysconfdir}/glideinwms/glidein-pilot-cernvm.ini
 fi
 
 %preun nimbus
@@ -289,11 +316,18 @@ fi
 %defattr(-,root,root,-)
 %attr(755,root,root) %{_sysconfdir}/glideinwms/glidein-pilot-one.ini
 
+%files cernvm
+%defattr(-,root,root,-)
+%attr(755,root,root) %{_sysconfdir}/glideinwms/glidein-pilot-cernvm.ini
+
 %files test
 %defattr(-,root,root,-)
 %attr(755,root,root) %{_sysconfdir}/glideinwms/glidein-pilot-test.ini
 
 %changelog
+* Mon Jul 13 2015 Andrew Lahiff  1.0.5-1
+- Added contextualization for CernVM
+
 * Wed Aug 20 2014 Parag Mhashilkar  1.0.4-1
 - Bug Fix: Start glidein_startup.sh in glidein_pilot's HOME
 

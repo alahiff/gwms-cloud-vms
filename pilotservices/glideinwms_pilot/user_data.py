@@ -15,6 +15,7 @@ from errors import UserDataError
 from contextualization_types import CONTEXT_TYPE_EC2
 from contextualization_types import CONTEXT_TYPE_NIMBUS
 from contextualization_types import CONTEXT_TYPE_OPENNEBULA
+from contextualization_types import CONTEXT_TYPE_CERNVM
 
 def smart_bool(s):
     if s is True or s is False:
@@ -81,6 +82,8 @@ class UserData(object):
             self.nimbus_retrieve_user_data()
         elif context_type == CONTEXT_TYPE_OPENNEBULA:
             self.one_retrieve_user_data()
+        elif context_type == CONTEXT_TYPE_CERNVM:
+            self.cernvm_retrieve_user_data()
 
 
     def ec2_retrieve_user_data(self):
@@ -127,6 +130,21 @@ class UserData(object):
         except Exception, ex:
             raise UserDataError("Error retrieving User Data (context type: NIMBUS): %s\n" % str(ex))
 
+    def cernvm_retrieve_user_data(self):
+        try:
+            # copy the userdata file
+            self.config.log.log_info('Reading context file: %s' % self.config.cernvm_user_data_file)
+            vm_utils.touch(self.config.userdata_file, mode=0600)
+            fd = open(self.config.userdata_file, 'w')
+            user_data = base64.b64decode(one_ec2_user_data(self.config.cernvm_user_data_file))
+            self.config.log.log_info('Writing User data to %s' % self.config.userdata_file)
+            # Only write to logs for debugging purposes.
+            # Writing ec2_user_data to logs is a security issue.
+            #self.config.log.log_info('Writing User data %s' % user_data)
+            fd.write(user_data)
+            fd.close()
+        except Exception, ex:
+            raise UserDataError("Error retrieving User Data (context type: CERNVM): %s\n" % str(ex))
 
 class GlideinWMSUserData(UserData):
     def __init__(self, config):
