@@ -8,6 +8,7 @@ import re
 import gzip
 import os
 import base64
+import shutil
 
 from errors import PilotError
 from errors import UserDataError
@@ -132,17 +133,8 @@ class UserData(object):
 
     def cernvm_retrieve_user_data(self):
         try:
-            # copy the userdata file
-            self.config.log.log_info('Reading context file: %s' % self.config.cernvm_user_data_file)
+            shutil.copy(self.config.cernvm_user_data_file, self.config.userdata_file)
             vm_utils.touch(self.config.userdata_file, mode=0600)
-            fd = open(self.config.userdata_file, 'w')
-            user_data = base64.b64decode(one_ec2_user_data(self.config.cernvm_user_data_file))
-            self.config.log.log_info('Writing User data to %s' % self.config.userdata_file)
-            # Only write to logs for debugging purposes.
-            # Writing ec2_user_data to logs is a security issue.
-            #self.config.log.log_info('Writing User data %s' % user_data)
-            fd.write(user_data)
-            fd.close()
         except Exception, ex:
             raise UserDataError("Error retrieving User Data (context type: CERNVM): %s\n" % str(ex))
 
