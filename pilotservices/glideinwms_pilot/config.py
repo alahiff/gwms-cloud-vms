@@ -34,6 +34,7 @@ class Config(object):
         # home directory is created by the rpm
         self.home_dir = "/home/glidein_pilot"
         self.glidein_user = "glidein_pilot"
+        self.scratch_dir = "/home/scratchgwms"
 
         # glidein_startup.sh specific attributes
         self.factory_url = ""
@@ -118,7 +119,7 @@ class Config(object):
 
         try:
             # add in the custom environment
-            for option in self.cp.ini.options("CUSTOM_ENVIRONMENT"):
+            for option in self.ini.cp.options("CUSTOM_ENVIRONMENT"):
                 environment[str(option).upper()] = self.ini.get("CUSTOM_ENVIRONMENT", option)
         except:
             # pylint: disable=W0702
@@ -126,5 +127,7 @@ class Config(object):
 
         # Add in the pilot proxy
         environment["X509_USER_PROXY"] = self.proxy_file
-
+        #environment["HOME"] = self.home_dir
+        #environment["LOGNAME"] = self.glidein_user
+        environment["SCRATCH"] = self.scratch_dir
         return environment

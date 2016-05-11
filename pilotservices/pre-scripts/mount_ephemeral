@@ -3,11 +3,26 @@
 #
 # mount_ephemeral  - Attempts to mount ephemeral storage
 #
+# HK, October 15 2015 Thursday, now we have a completely different mechamisn
+# to mount the ephemeral store on /home/scratchgwms
 
 LOGFILE=/tmp/ephemeral_storage.log
 VIRTUAL_DISKS="xvdf xvdb vda3 vdb sda2 sdb sdbc"
 
+fdisk -l /dev/wnscratch/scratchgwms 2>/dev/null | grep Disk >> $LOGFILE
+if [ $? -eq 0 ]; then
+    VIRTUAL_DISKS="xvdf wnscratch/scratchgwms vda3 vdb sda2 sdb sdbc"
+fi
+
+SCRATCHGWMS=/home/scratchgwms
+
 echo "Attempting to mount ephemeral storage" | tee $LOGFILE
+
+# we first check if /home/scratchgwms itself exists and create one if it does not exist
+# this is necessary because we will need /home/scratchgwms even when no ephmeral storage is available.
+if [ ! -d $SCRATCHGWMS ]; then
+    mkdir -v $SCRATCHGWMS 2>&1 | tee --append $LOGFILE
+fi
 
 for VD in $VIRTUAL_DISKS ; do
     echo "Checking /dev/$VD ..." | tee --append $LOGFILE
@@ -15,15 +30,28 @@ for VD in $VIRTUAL_DISKS ; do
     fdisk -l /dev/$VD 2>/dev/null | grep Disk >> $LOGFILE
     if [ $? -eq 0 ]; then
         echo "Virtual disk seen at /dev/$VD: $d" | tee $LOGFILE
-        #echo "Creating filesystem..." | tee $LOGFILE
-        #mkfs.ext3 -F -L home /dev/$VD | tee $LOGFILE
 
-        echo "Mounting and mirroring /home..." | tee --append $LOGFILE
-        rm -rf /home.orig
-        mv -v /home /home.orig 2>&1 | tee --append $LOGFILE
-        mkdir -v /home  2>&1 | tee --append $LOGFILE
-        mount /dev/$VD /home 2>&1 | tee --append $LOGFILE
-        cp -avr /home.orig/* /home 2>&1 | tee --append $LOGFILE
+        string1=`grep scratchgwms /etc/mtab`
+        if [ -n "$string1" ]; then
+            echo "$SCRATCHGWMS is currently mounted" | tee --append $LOGFILE
+            (cd $SCRATCHGWMS && rm -rf *)  2>&1 | tee --append $LOGFILE
+            umount $SCRATCHGWMS 2>&1 | tee --append $LOGFILE
+        fi
+
+        if [ ! -d $SCRATCHGWMS ]; then
+            mkdir -v $SCRATCHGWMS 2>&1 | tee --append $LOGFILE
+        fi
+
+#HK new code begins
+	fsstring=`file -sL /dev/$VD | grep filesystem`
+	if [ -z "$fsstring" ]; then
+	    echo "/dev/$VD does not have a filesystem, so we make one" | tee --append $LOGFILE
+	    mkfs -t ext4 /dev/$VD
+	else
+	    echo "/dev/$VD already has a filesystem, we just proceed to mounting it " | tee --append $LOGFILE
+	fi
+#HK new code ends
+        mount /dev/$VD $SCRATCHGWMS 2>&1 | tee --append $LOGFILE
 
         d=`date`
         echo "Done with /dev/$VD: $d" | tee --append $LOGFILE

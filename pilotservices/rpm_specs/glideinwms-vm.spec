@@ -8,8 +8,8 @@
 %endif
 
 Name:               glideinwms-vm
-Version:            1.0.5
-Release:            1%{?dist}
+Version:            1.0.9
+Release:            2%{?dist}
 
 Summary:            The glideinWMS service that contextualizes a VM
 Group:              System Environment/Daemons
@@ -325,8 +325,23 @@ fi
 %attr(755,root,root) %{_sysconfdir}/glideinwms/glidein-pilot-test.ini
 
 %changelog
-* Mon Jul 13 2015 Andrew Lahiff  1.0.5-1
-- Added contextualization for CernVM
+* Wed Mar 23 2016 Parag Mhashilkar<parag@fnal.gov> 1.0.9-1
+- Read the proxy file from user data as last field rather than positional argument
+- Bug Fix: Fixed typo in variable name
+
+* Fri Jan 29 2016 Hyunwoo Kim  1.0.8-1
+- mount_ephemeral will first look for LVM, if found, it will replace /dev/xvdb
+
+* Thu Dec 17 2015 Hyunwoo Kim  1.0.7-1
+- mount_ephemeral will try to format /dev/xvdb with ext4 filesystem when xvdb is EBS in case of c4.* instances
+- Tony Tiradani updated user_data.py to deal with gzip
+
+* Thu Oct 15 2015 Hyunwoo Kim  1.0.6-1
+- Introduce /home/scratchgwms. mount_ephemeral will try to mount an ephemeral store in this new location.
+- If no ephmeral store available, /home/scratchgwms is still used where glidein_startup.sh will run
+- /home/glidein_pilot is still used as the initial space where pilot-launcher does some initializations
+- This changelog did not show 1.0.5-1 but web1.fnal.gov:/var/www/html/files/glideinwms/prod/6/x86_64/ already had 1.0.5-1
+- and yum install installed 1.0.5-1, so I jump to 1.0.6-1
 
 * Wed Aug 20 2014 Parag Mhashilkar  1.0.4-1
 - Bug Fix: Start glidein_startup.sh in glidein_pilot's HOME
